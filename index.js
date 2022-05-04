@@ -69,7 +69,7 @@ async function getNewToken(oAuth2Client) {
   console.log("Authorize this app by visiting this url:", authUrl);
 
   const code = readline.question("Enter the code from that page here: ");
-  const token = await oAuth2Client.getToken(code);
+  const token = (await oAuth2Client.getToken(code)).tokens;
   oAuth2Client.setCredentials(token);
   await fs.writeFile(TOKEN_PATH, JSON.stringify(token))
 
