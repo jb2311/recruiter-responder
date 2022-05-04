@@ -3,7 +3,7 @@
 
 const fs = require("fs").promises;
 const { google } = require("googleapis");
-const readline = require("readline");
+const readline = require("readline-sync");
 var parseMessage = require('gmail-api-parse-message');
 
 const TOKEN_PATH = "./token.json";
@@ -11,11 +11,11 @@ const SCOPES = ["https://mail.google.com/"];
 let gmail;
 
 async function run() {
-  const creds = await getCreds();
-  const auth = await authorize(creds);
-  gmail = google.gmail({ version: 'v1', auth });
-
   try {
+    const creds = await getCreds();
+    const auth = await authorize(creds);
+    gmail = google.gmail({ version: 'v1', auth });
+
     const recruitersLabel = await getRecruiterLabel();
     const unreadMessages = await getUnreadMessagesFromLabel(recruitersLabel);
 
@@ -46,41 +46,34 @@ async function authorize(credentials) {
     client_id, client_secret, redirect_uris[0]);
 
   // Check if we have previously stored a token.
-  const token = await fs.readFile(TOKEN_PATH);
+  let token;
+  try {
+    let tokenBuffer = await fs.readFile(TOKEN_PATH);
+    token = JSON.parse(tokenBuffer.toString());
 
-  oAuth2Client.setCredentials(JSON.parse(token.toString()))
+
+  } catch (error) {
+    token = await getNewToken(oAuth2Client);
+  }
+
+  oAuth2Client.setCredentials(token)
   return oAuth2Client;
 }
 
-function getNewToken(oAuth2Client, callback) {
+async function getNewToken(oAuth2Client) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: "offline",
     scope: SCOPES
   });
 
   console.log("Authorize this app by visiting this url:", authUrl);
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
 
-  rl.question("Enter the code from that page here: ", (code) => {
-    rl.close();
-    oAuth2Client.getToken(code, (err, token) => {
-      if (err) {
-        return console.error("Error retrieving access token", err);
-      }
-      oAuth2Client.setCredentials(token);
-      // Store the token to disk for later program executions
-      fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-        if (err) {
-          return console.error(err);
-        }
-        console.log("Token stored to", TOKEN_PATH);
-      });
-      callback(oAuth2Client);
-    });
-  });
+  const code = readline.question("Enter the code from that page here: ");
+  const token = await oAuth2Client.getToken(code);
+  oAuth2Client.setCredentials(token);
+  await fs.writeFile(TOKEN_PATH, JSON.stringify(token))
+
+  return token;
 }
 
 async function getRecruiterLabel() {
@@ -129,7 +122,9 @@ async function replyToRecruiter(message) {
     `To: ${message.headers.from}`,
     'Content-Type: text/html; charset=utf-8',
     'MIME-Version: 1.0',
-    `Subject: ${message.headers.subject}`,
+    `References: ${message.headers.references} ${message.headers['message-id']}`,
+    `In-Reply-To: ${message.headers['message-id']}`,
+    `Subject: Re:${message.headers.subject}`,
     '',
     emailHtml.toString()
   ];
