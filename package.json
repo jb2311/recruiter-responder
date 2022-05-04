@@ -1,0 +1,23 @@
+{
+  "name": "recruiter-responder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jb2311/recruiter-responder.git"
+  },
+  "author": "Joseph Blair",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jb2311/recruiter-responder/issues"
+  },
+  "homepage": "https://github.com/jb2311/recruiter-responder#readme",
+  "dependencies": {
+    "gmail-api-parse-message": "^2.1.2",
+    "googleapis": "^100.0.0"
+  }
+}
