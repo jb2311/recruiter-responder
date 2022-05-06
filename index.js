@@ -119,7 +119,7 @@ async function replyToRecruiter(message) {
 
   const messageParts = [
     `From: ${message.headers.to}`,
-    `To: ${message.headers.from}`,
+    `To: ${message.headers['reply-to']}`,
     'Content-Type: text/html; charset=utf-8',
     'MIME-Version: 1.0',
     `References: ${message.headers.references} ${message.headers['message-id']}`,
